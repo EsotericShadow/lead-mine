@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terrace BC Business Profile Viewer</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .navbar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); box-shadow: 0 2px 4px rgba(0,0,0,.1); }
+        .navbar-brand { font-weight: bold; color: white !important; }
+        .stats-card { border: none; border-radius: 15px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); transition: transform 0.2s; }
+        .stats-card:hover { transform: translateY(-2px); }
+        .business-card { border: none; border-radius: 15px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; margin-bottom: 20px; }
+        .business-card:hover { transform: translateY(-5px); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15); }
+        .intelligence-score { position: absolute; top: 10px; right: 10px; background: linear-gradient(45deg, #667eea, #764ba2); color: white; border-radius: 20px; padding: 5px 12px; font-size: 0.8rem; font-weight: bold; }
+        .badge-custom { background-color: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; }
+        .contact-item { display: inline-block; margin: 2px; padding: 4px 8px; background-color: #f8f9fa; border-radius: 15px; font-size: 0.85rem; border: 1px solid #dee2e6; }
+        .social-link { color: #667eea; text-decoration: none; margin-right: 10px; transition: color 0.2s; }
+        .social-link:hover { color: #764ba2; }
+        .rating-stars .fa-solid { color: #f59e0b; }
+        .rating-stars .fa-regular { color: #d1d5db; }
+        .loading { text-align: center; padding: 50px; }
+        .search-filters { background: white; border-radius: 15px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); padding: 20px; margin-bottom: 30px; }
+        .modal-content { border-radius: 15px; border: none; }
+        .modal-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 15px 15px 0 0; }
+        .info-section { background: #f8f9fa; border-radius: 10px; padding: 15px; margin-bottom: 15px; }
+        .pagination { justify-content: center; }
+        .page-link { color: #667eea; border-color: #667eea; }
+        .page-link:hover { color: #764ba2; background-color: #e3f2fd; border-color: #764ba2; }
+        .page-item.active .page-link { background-color: #667eea; border-color: #667eea; }
+        @media (max-width: 768px) { .business-card { margin-bottom: 15px; } .intelligence-score { position: static; display: inline-block; margin-top: 10px; } }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-building"></i>
+                Terrace BC Business Intelligence Viewer
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text text-white" id="data-source">
+                    <i class="fas fa-database"></i>
+                    <span id="loaded-file">Loading...</span>
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Statistics Dashboard -->
+        <div class="row mb-4" id="stats-row">
+            <div class="col-md-2 col-6 mb-3">
+                <div class="card stats-card h-100 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-building fa-2x text-primary mb-2"></i>
+                        <h4 class="card-title mb-1" id="total-businesses">-</h4>
+                        <p class="card-text text-muted small">Total Businesses</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2 col-6 mb-3">
+                <div class="card stats-card h-100 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-phone fa-2x text-success mb-2"></i>
+                        <h4 class="card-title mb-1" id="phone-coverage">-</h4>
+                        <p class="card-text text-muted small">Phone Coverage</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2 col-6 mb-3">
+                <div class="card stats-card h-100 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-share-alt fa-2x text-info mb-2"></i>
+                        <h4 class="card-title mb-1" id="social-coverage">-</h4>
+                        <p class="card-text text-muted small">Social Media</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2 col-6 mb-3">
+                <div class="card stats-card h-100 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-star fa-2x text-warning mb-2"></i>
+                        <h4 class="card-title mb-1" id="review-coverage">-</h4>
+                        <p class="card-text text-muted small">Reviews</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2 col-6 mb-3">
+                <div class="card stats-card h-100 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-globe fa-2x text-secondary mb-2"></i>
+                        <h4 class="card-title mb-1" id="website-coverage">-</h4>
+                        <p class="card-text text-muted small">Websites</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2 col-6 mb-3">
+                <div class="card stats-card h-100 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-chart-line fa-2x text-danger mb-2"></i>
+                        <h4 class="card-title mb-1" id="avg-score">-</h4>
+                        <p class="card-text text-muted small">Avg Intel Score</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search and Filters -->
+        <div class="search-filters">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="search-input" class="form-label">
+                        <i class="fas fa-search"></i> Search Businesses
+                    </label>
+                    <input type="text" class="form-control" id="search-input" placeholder="Search by name, address, email, services...">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="category-filter" class="form-label">
+                        <i class="fas fa-filter"></i> Category
+                    </label>
+                    <select class="form-select" id="category-filter">
+                        <option value="all">All Categories</option>
+                    </select>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="score-filter" class="form-label">
+                        <i class="fas fa-chart-bar"></i> Min Intelligence Score
+                    </label>
+                    <select class="form-select" id="score-filter">
+                        <option value="0">Any Score</option>
+                        <option value="5">5+</option>
+                        <option value="6">6+</option>
+                        <option value="7">7+</option>
+                        <option value="8">8+</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="sort-by" class="form-label">
+                        <i class="fas fa-sort"></i> Sort By
+                    </label>
+                    <select class="form-select" id="sort-by">
+                        <option value="">Default (Intel, then Rating)</option>
+                        <option value="rating">Rating</option>
+                        <option value="phones">Phones Found</option>
+                        <option value="reviews">Reviews Found</option>
+                        <option value="websites">Websites Found</option>
+                        <option value="intelligence">Intelligence Score</option>
+                        <option value="name">Name (A-Z)</option>
+                        <option value="category">Category (A-Z)</option>
+                    </select>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="sort-dir" class="form-label">
+                        <i class="fas fa-arrow-up-a-z"></i> Order
+                    </label>
+                    <select class="form-select" id="sort-dir">
+                        <option value="desc" selected>Desc</option>
+                        <option value="asc">Asc</option>
+                    </select>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="per-page" class="form-label">
+                        <i class="fas fa-list"></i> Per Page
+                    </label>
+                    <select class="form-select" id="per-page">
+                        <option value="25">25</option>
+                        <option value="50" selected>50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-md-3 mb-3">
+                    <label for="verified-filter" class="form-label">
+                        <i class="fas fa-check-circle"></i> Verified
+                    </label>
+                    <select class="form-select" id="verified-filter">
+                        <option value="">Any</option>
+                        <option value="true">Verified</option>
+                        <option value="false">Unverified</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="outreach-filter" class="form-label">
+                        <i class="fas fa-phone-volume"></i> Outreach Status
+                    </label>
+                    <select class="form-select" id="outreach-filter">
+                        <option value="">Any</option>
+                        <option value="not_contacted">Not contacted</option>
+                        <option value="attempted">Attempted</option>
+                        <option value="contacted">Contacted</option>
+                        <option value="qualified">Qualified</option>
+                        <option value="won">Won</option>
+                        <option value="lost">Lost</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="stage-filter" class="form-label">
+                        <i class="fas fa-flag-checkered"></i> Sales Stage
+                    </label>
+                    <select class="form-select" id="stage-filter">
+                        <option value="">Any</option>
+                        <option value="lead">Lead</option>
+                        <option value="prospect">Prospect</option>
+                        <option value="negotiation">Negotiation</option>
+                        <option value="won">Won</option>
+                        <option value="lost">Lost</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div id="results-section">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 id="results-count">Loading businesses...</h5>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary active" id="view-grid">
+                        <i class="fas fa-th"></i> Grid
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="view-list">
+                        <i class="fas fa-list"></i> List
+                    </button>
+                </div>
+            </div>
+            
+            <div id="businesses-container" class="row">
+                <div class="loading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading business data...</p>
+                </div>
+            </div>
+            
+            <!-- Pagination -->
+            <nav aria-label="Business pagination" id="pagination-nav" style="display: none;">
+                <ul class="pagination" id="pagination"></ul>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Business Detail Modal -->
+    <div class="modal fade" id="businessModal" tabindex="-1" aria-labelledby="businessModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-4" id="businessModalLabel">
+                        <i class="fas fa-building"></i>
+                        <span id="modal-business-name">Business Details</span>
+                    </h1>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="modal-body">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JavaScript -->
+    <script src="/legacy-viewer/app.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,154 @@
+// This is your Prisma schema file.
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Business {
+  id                        String   @id @default(cuid())
+  businessName              String   @map("business_name")
+  websiteFound              String?  @map("website_found")
+  websiteFoundSource        String?  @map("website_found_source")
+  description               String?
+  websiteAboutCopy          String?  @map("website_about_copy")
+  googleMapsSearchUrl       String?  @map("google_maps_search_url")
+  googlePlaceUrl            String?  @map("google_place_url")
+  googleOfficialWebsite     String?  @map("google_official_website")
+  googleRating              Float?   @map("google_rating")
+  googleReviewsCount        Float?   @map("google_reviews_count")
+  googleAddress             String?  @map("google_address")
+  googlePhone               String?  @map("google_phone")
+  googleHoursSummary        String?  @map("google_hours_summary")
+  googleFromBusiness        String?  @map("google_from_business")
+  googleReviewsJson         String?  @map("google_reviews_json")
+  totalPhonesFound          Int?     @map("total_phones_found")
+  avgConfidence             Float?   @map("avg_confidence")
+  scrapedAt                 String?  @map("scraped_at")
+  socialFacebook            String?  @map("social_facebook")
+  socialInstagram           String?  @map("social_instagram")
+  socialLinkedin            String?  @map("social_linkedin")
+  socialTwitter             String?  @map("social_twitter")
+  socialYoutube             String?  @map("social_youtube")
+  socialTiktok              String?  @map("social_tiktok")
+  phone1                    String?  @map("phone_1")
+  phone1Confidence          Float?   @map("phone_1_confidence")
+  phone1Source              String?  @map("phone_1_source")
+  phone1FinalAssignment     String?  @map("phone_1_final_assignment")
+  phone1Conflicts           String?  @map("phone_1_conflicts")
+  phone2                    String?  @map("phone_2")
+  phone2Confidence          Float?   @map("phone_2_confidence")
+  phone2Source              String?  @map("phone_2_source")
+  phone2FinalAssignment     String?  @map("phone_2_final_assignment")
+  phone2Conflicts           String?  @map("phone_2_conflicts")
+  phone3                    String?  @map("phone_3")
+  phone3Confidence          Float?   @map("phone_3_confidence")
+  phone3Source              String?  @map("phone_3_source")
+  phone3FinalAssignment     String?  @map("phone_3_final_assignment")
+  phone3Conflicts           String?  @map("phone_3_conflicts")
+  phone4                    String?  @map("phone_4")
+  phone4Confidence          Float?   @map("phone_4_confidence")
+  phone4Source              String?  @map("phone_4_source")
+  phone4FinalAssignment     String?  @map("phone_4_final_assignment")
+  phone4Conflicts           String?  @map("phone_4_conflicts")
+  phone5                    String?  @map("phone_5")
+  phone5Confidence          Float?   @map("phone_5_confidence")
+  phone5Source              String?  @map("phone_5_source")
+  phone5FinalAssignment     String?  @map("phone_5_final_assignment")
+  phone5Conflicts           String?  @map("phone_5_conflicts")
+  createdAt                 DateTime @default(now()) @map("created_at")
+  updatedAt                 DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  leadInfo      LeadInfo?
+  editableData  EditableBusinessData?
+  notes         Note[]
+
+  @@map("businesses")
+}
+
+model LeadInfo {
+  id                  String    @id @default(cuid())
+  businessId          String    @unique @map("business_id")
+  status              LeadStatus @default(NEW)
+  priority            Priority   @default(MEDIUM)
+  assignedTo          String    @map("assigned_to")
+  estimatedValue      Decimal   @default(0) @map("estimated_value") @db.Decimal(10, 2)
+  expectedCloseDate   DateTime? @map("expected_close_date")
+  lastContactDate     DateTime? @map("last_contact_date")
+  nextFollowUpDate    DateTime? @map("next_follow_up_date")
+  source              String    @default("CSV Import")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("lead_info")
+}
+
+model EditableBusinessData {
+  id              String   @id @default(cuid())
+  businessId      String   @unique @map("business_id")
+  primaryPhone    String?  @map("primary_phone")
+  primaryEmail    String?  @map("primary_email")
+  contactPerson   String?  @map("contact_person")
+  alternatePhone  String?  @map("alternate_phone")
+  alternateEmail  String?  @map("alternate_email")
+  notes           String?
+  tags            String[] @default([])
+  customFields    Json?    @map("custom_fields")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("editable_business_data")
+}
+
+model Note {
+  id         String   @id @default(cuid())
+  businessId String   @map("business_id")
+  content    String
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  createdBy  String   @map("created_by")
+  type       NoteType @default(GENERAL)
+
+  // Relations
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("notes")
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  PROPOSAL_SENT
+  NEGOTIATING
+  CLOSED_WON
+  CLOSED_LOST
+  ON_HOLD
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum NoteType {
+  CALL
+  EMAIL
+  MEETING
+  GENERAL
+  FOLLOW_UP
+}
