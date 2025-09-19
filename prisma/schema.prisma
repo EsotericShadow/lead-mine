@@ -68,8 +68,27 @@ model Business {
   leadInfo      LeadInfo?
   editableData  EditableBusinessData?
   notes         Note[]
+  campaignInvite CampaignInvite?
 
   @@map("businesses")
+}
+
+model CampaignInvite {
+  id             String   @id @default(cuid())
+  businessId     String   @unique @map("business_id")
+  token          String   @unique
+  lastEmailSent  DateTime? @map("last_email_sent")
+  emailsSent     Int      @default(0) @map("emails_sent")
+  visitsCount    Int      @default(0) @map("visits_count")
+  lastVisitedAt  DateTime? @map("last_visited_at")
+  rsvpsCount     Int      @default(0) @map("rsvps_count")
+  lastRsvpAt     DateTime? @map("last_rsvp_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("campaign_invites")
 }
 
 model LeadInfo {

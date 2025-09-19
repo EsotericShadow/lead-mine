@@ -58,8 +58,9 @@ export async function POST(
     const result = createNoteSchema.safeParse(body);
 
     if (!result.success) {
+      const formatted = result.error.flatten();
       return NextResponse.json(
-        { error: 'Invalid input', details: result.error.issues },
+        { error: 'Invalid input', details: formatted.fieldErrors },
         { status: 400 }
       );
     }

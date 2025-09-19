@@ -13,14 +13,14 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
     username: '',
     password: '',
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof LoginInput, string>>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [generalError, setGeneralError] = useState('');
 
   const router = useRouter();
 
   const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
+    const newErrors: Partial<Record<keyof LoginInput, string>> = {};
     
     if (!formData.username.trim()) {
       newErrors.username = 'Username is required';
@@ -67,12 +67,24 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
         } else if (response.status === 401) {
           setGeneralError('Invalid username or password.');
         } else if (response.status === 400 && data.details) {
-          // Validation errors
-          const validationErrors: Record<string, string> = {};
-          data.details.forEach((error: { path: string[]; message: string }) => {
-            const field = error.path[0];
-            validationErrors[field] = error.message;
-          });
+          const validationErrors: Partial<Record<keyof LoginInput, string>> = {};
+          if (Array.isArray(data.details)) {
+            data.details.forEach((error: { path: string[]; message: string }) => {
+              const field = error.path?.[0] as keyof LoginInput | undefined;
+              if (field) {
+                validationErrors[field] = error.message;
+              }
+            });
+          } else {
+            Object.entries(data.details as Record<string, string[] | undefined>)
+              .forEach(([key, messages]) => {
+                const field = key as keyof LoginInput;
+                const message = Array.isArray(messages) ? messages[0] : messages;
+                if (message) {
+                  validationErrors[field] = message;
+                }
+              });
+          }
           setErrors(validationErrors);
         } else {
           setGeneralError(data.error || 'Login failed. Please try again.');
@@ -87,10 +99,10 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
   };
 
   const handleInputChange = (field: keyof LoginInput, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev: LoginInput) => ({ ...prev, [field]: value }));
     // Clear field-specific error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
     // Clear general error
     if (generalError) {

@@ -30,8 +30,9 @@ export async function POST(request: NextRequest) {
     // Validate input
     const result = LoginSchema.safeParse(body);
     if (!result.success) {
+      const formatted = result.error.flatten();
       return NextResponse.json(
-        { error: 'Invalid input', details: result.error.issues },
+        { error: 'Invalid input', details: formatted.fieldErrors },
         { status: 400 }
       );
     }

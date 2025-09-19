@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Secure Dashboard – Integration Overview
 
-## Getting Started
+This project hosts the business corpus (\~1,100+ records) plus a small API surface that lets other apps—like the RSVP microsite—pull contacts and push engagement telemetry.
 
-First, run the development server:
+### Environment
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Create a `.env` (see `.env.example`) with:
+
+```
+DATABASE_URL="postgresql://…"
+INTEGRATION_API_KEY="long-random-string"
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The API key is required for all `/api/integration/*` endpoints.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Database
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Run Prisma client generation (and apply schema changes) with:
 
-## Learn More
+```bash
+npm install
+npx prisma db execute --file prisma/migrations/202509190512_add_campaign_invites/migration.sql --schema prisma/schema.prisma
+npx prisma generate
+```
 
-To learn more about Next.js, take a look at the following resources:
+The new `campaign_invites` table links every business to a unique campaign token and keeps running tallies for email sends, visits, and RSVPs.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Integration API
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+All routes live under `/api/integration` and require the `INTEGRATION_API_KEY` via the `Authorization: Bearer <key>` header (or `x-api-key`).
 
-## Deploy on Vercel
+- `GET /api/integration/businesses`
+  - Optional query params:
+    - `createMissing=1` – backfills `campaign_invites` for businesses without one.
+    - `hasEmail=1` – return only businesses with at least one email.
+    - `limit` / `cursor` – pagination (default 200, max 500).
+  - Response contains business contact data plus invite stats.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `POST /api/integration/events`
+  - Body: `{ token?: string, businessId?: string, type: 'email_sent' | 'visit' | 'rsvp', meta?: {...} }`
+  - Updates invite counters. RSVP events also append a Note on the business record.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Local development
+
+```bash
+npm run dev        # start Next.js locally
+npm run lint       # lint
+npm run type-check # TypeScript
+```
+
+Deploys on Vercel use `npm run vercel:build` (runs `prisma generate` then `next build`).
