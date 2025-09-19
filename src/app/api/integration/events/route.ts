@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
   let body: EventPayload;
   try {
     body = await request.json();
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
@@ -74,6 +74,7 @@ export async function POST(request: NextRequest) {
       data: {
         emailsSent: { increment: 1 },
         lastEmailSent: now,
+        lastEmailMeta: body.meta ?? undefined,
       },
     });
 
@@ -86,6 +87,7 @@ export async function POST(request: NextRequest) {
       data: {
         visitsCount: { increment: 1 },
         lastVisitedAt: now,
+        lastVisitMeta: body.meta ?? undefined,
       },
     });
 
@@ -99,6 +101,7 @@ export async function POST(request: NextRequest) {
         data: {
           rsvpsCount: { increment: 1 },
           lastRsvpAt: now,
+          lastRsvpMeta: body.meta ?? undefined,
         },
       });
 

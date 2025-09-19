@@ -124,7 +124,7 @@ function getPrismaErrorCode(e: unknown): string | undefined {
 }
 
 async function withRetry<T>(fn: () => Promise<T>, retries = 3, delayMs = 500): Promise<T> {
-  let lastErr: any;
+  let lastErr: unknown;
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       return await fn();
@@ -140,7 +140,8 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 3, delayMs = 500): P
       throw e;
     }
   }
-  throw lastErr;
+  if (lastErr instanceof Error) throw lastErr;
+  throw new Error(lastErr ? String(lastErr) : 'Unknown error');
 }
 
 async function backfillBatch(skip: number, take: number) {
@@ -241,4 +242,3 @@ main()
   .finally(async () => {
     await db.$disconnect();
   });
-

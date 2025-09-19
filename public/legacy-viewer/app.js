@@ -199,11 +199,12 @@ class BusinessViewer {
   }
 
   renderBusinessCard(b) {
+    const tags = (b.services_tags || []).slice(0, 6);
+    const servicesTagsHtml = tags.length ? `<div class="mt-2">${tags.map(t => `<span class=\"badge badge-custom me-1 mb-1\">${t}</span>`).join('')}</div>` : '';
     const phones = (b.phones || []).slice(0, 2).map(p => `<span class="contact-item"><i class="fas fa-phone"></i> ${p.number}</span>`).join('');
     const social = (b.social_media || []).slice(0, 3).map(s => `<a href="${s.url}" class="social-link" target="_blank" title="${s.platform}"><i class="fab fa-${this.getSocialIcon(s.platform)}"></i></a>`).join('');
     const websites = (b.websites || []).slice(0, 1).map(w => `<a href="${w.url}" class="social-link" target="_blank" title="Website"><i class="fas fa-globe"></i></a>`).join('');
     const rating = (b.total_reviews > 0 && b.average_rating > 0) ? `<div class="rating-stars" title="${b.average_rating} from ${b.total_reviews} reviews">${this.renderStars(b.average_rating)} <small>(${b.total_reviews} reviews)</small></div>` : '';
-    const services = (b.services && b.services !== 'nan') ? `<small class="text-muted d-block mt-2">${this.truncateText(b.services, 100)}</small>` : '';
     const verifiedBadge = b.verified ? `<span class="badge bg-success position-absolute" style="top:10px; left:10px;"><i class="fas fa-check"></i> Verified</span>` : '';
 
     return `
@@ -219,8 +220,8 @@ class BusinessViewer {
             ${phones}
             ${rating}
             <div class="mt-3">${social}${websites}</div>
-            ${services}
-            <div class="mt-3">
+            ${servicesTagsHtml}
+            <div class=\"mt-3\">
               <div class="row text-center">
                 <div class="col-3"><small class="text-muted">Phones</small><br><span class="badge bg-success">${b.phones_found || 0}</span></div>
                 <div class="col-3"><small class="text-muted">Social</small><br><span class="badge bg-info">${b.social_accounts || 0}</span></div>
@@ -234,6 +235,8 @@ class BusinessViewer {
   }
 
   renderBusinessListItem(b) {
+    const tags = (b.services_tags || []).slice(0, 4);
+    const servicesTagsHtml = tags.length ? `<div class=\"mt-2\">${tags.map(t => `<span class=\"badge badge-custom me-1 mb-1\">${t}</span>`).join('')}</div>` : '';
     const phone = (b.phones || []).slice(0, 1).map(p => p.number).join(', ');
     const rating = (b.total_reviews > 0 && b.average_rating > 0) ? `<span title="${b.average_rating} from ${b.total_reviews} reviews">${this.renderStars(b.average_rating)}</span> (${b.total_reviews})` : 'No reviews';
     return `
@@ -250,8 +253,8 @@ class BusinessViewer {
               ${phone ? `<small><i class="fas fa-phone"></i> ${phone}</small><br>` : ''}
               ${b.email ? `<small><i class="fas fa-envelope"></i> ${b.email}</small>` : ''}
             </div>
-            <div class="col-md-2 text-center"><div class="rating-stars small">${rating}</div></div>
-            <div class="col-md-3 text-end">
+            <div class=\"col-md-2 text-center\"><div class=\"rating-stars small\">${rating}</div>${servicesTagsHtml}</div>
+            <div class=\"col-md-3 text-end\">
               <div class="row text-center">
                 <div class="col-3"><span class="badge bg-success">${b.phones_found || 0}</span><small class="d-block">Phones</small></div>
                 <div class="col-3"><span class="badge bg-info">${b.social_accounts || 0}</span><small class="d-block">Social</small></div>
@@ -280,11 +283,25 @@ class BusinessViewer {
   }
 
   renderBusinessDetail(b) {
+    const renderReview = (r) => {
+      const stars = r && r.rating ? `<span class=\"rating-stars small\">${this.renderStars(r.rating)}</span>` : '';
+      const author = r && r.author ? `<strong>${r.author}</strong>` : '';
+      const date = r && r.date ? `<small class=\"text-muted\"> ${new Date(r.date).toLocaleDateString?.() || r.date}</small>` : '';
+      const text = r && r.text ? `<div class=\"mt-1\"><small>${this.truncateText(r.text, 300)}</small></div>` : '';
+      return `<div class=\"mb-3\">${author} ${date} ${stars}${text}</div>`;
+    };
     document.getElementById('modal-business-name').textContent = b.name || '';
     const modalBody = document.getElementById('modal-body');
     const google = b.google || {};
+    const reviewList = (google.reviews || []).slice(0, 6);
+    const reviewsSection = reviewList.length ? `
+      <div class=\"info-section\">
+        <h6><i class=\"fas fa-star\"></i> Recent Reviews</h6>
+        ${reviewList.map(renderReview).join('')}
+      </div>` : '';
+
     const googleSection = `
-      <div class="info-section">
+      <div class=\"info-section\">
         <h6><i class="fab fa-google"></i> Google</h6>
         ${(google.reviews_count > 0 && google.rating) ? `<p><strong>Google Rating:</strong> <span class="rating-stars">${this.renderStars(google.rating)}</span> <small>(${google.reviews_count})</small></p>` : ''}
         ${google.address ? `<p><i class="fas fa-map-marker-alt"></i> ${google.address}</p>` : ''}
@@ -313,10 +330,11 @@ class BusinessViewer {
 
           ${b.address ? `<div class="info-section"><h6><i class="fas fa-map-marker-alt"></i> Addresses</h6><p><i class="fas fa-building"></i> ${b.address}</p></div>` : ''}
 
-          ${(b.phones || []).length ? `<div class="info-section"><h6><i class="fas fa-phone"></i> Phone Numbers</h6>${(b.phones || []).map(p => `<p><i class="fas fa-phone"></i> <a href="tel:${p.number}">${p.number}</a> ${p.location ? ` (${p.location})` : ''} ${p.type ? ` <span class=\"badge badge-custom\">${p.type}</span>` : ''} ${p.confidence ? `<small class=\"text-muted\">Confidence: ${Math.round(p.confidence * 100)}%</small>` : ''}</p>`).join('')}</div>` : ''}
+          ${(b.phones || []).length ? `<div class=\"info-section\"><h6><i class=\"fas fa-phone\"></i> Phone Numbers</h6>${(b.phones || []).map(p => `<p><i class=\"fas fa-phone\"></i> <a href=\"tel:${p.number}\">${p.number}</a> ${p.location ? ` (${p.location})` : ''} ${p.type ? ` <span class=\\\"badge badge-custom\\\">${p.type}</span>` : ''} ${p.confidence ? `<small class=\\\"text-muted\\\">Confidence: ${Math.round(p.confidence * 100)}%</small>` : ''}</p>`).join('')}</div>` : ''}
 
-          ${b.services ? `<div class="info-section"><h6><i class="fas fa-cogs"></i> Services</h6><p>${b.services}</p></div>` : ''}
+          ${(b.services_tags || []).length ? `<div class=\"info-section\"><h6><i class=\"fas fa-cogs\"></i> Services</h6><div>${(b.services_tags||[]).map(t => `<span class=\\\"badge badge-custom me-1 mb-1\\\">${t}</span>`).join('')}</div></div>` : (b.services ? `<div class=\"info-section\"><h6><i class=\"fas fa-cogs\"></i> Services</h6><p>${this.truncateText(b.services, 300)}</p></div>` : '')}
           ${googleSection}
+          ${reviewsSection}
         </div>
         <div class="col-md-4">
           ${(b.websites || []).length ? `<div class="info-section"><h6><i class="fas fa-globe"></i> Websites</h6>${b.websites.map(w => `<p><a href=\"${w.url}\" target=\"_blank\" class=\"social-link\"><i class=\"fas fa-external-link-alt\"></i> ${this.getDomainFromUrl(w.url)}</a> ${w.type ? `<br><small class=\"text-muted\">${w.type}</small>` : ''}</p>`).join('')}</div>` : ''}
@@ -395,4 +413,3 @@ class BusinessViewer {
 }
 
 document.addEventListener('DOMContentLoaded', () => new BusinessViewer());
-

@@ -83,6 +83,9 @@ model CampaignInvite {
   lastVisitedAt  DateTime? @map("last_visited_at")
   rsvpsCount     Int      @default(0) @map("rsvps_count")
   lastRsvpAt     DateTime? @map("last_rsvp_at")
+  lastEmailMeta  Json?    @map("last_email_meta")
+  lastVisitMeta  Json?    @map("last_visit_meta")
+  lastRsvpMeta   Json?    @map("last_rsvp_meta")
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
 

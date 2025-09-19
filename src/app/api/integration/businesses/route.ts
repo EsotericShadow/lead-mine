@@ -29,10 +29,22 @@ export async function GET(request: NextRequest) {
   const cursor = url.searchParams.get('cursor') || undefined;
   const onlyEmailable = parseBooleanParam(url.searchParams.get('hasEmail'));
   const createMissing = parseBooleanParam(url.searchParams.get('createMissing'));
+  const idsParam = url.searchParams.get('ids');
+  const searchTerm = url.searchParams.get('search')?.trim();
+
+  const ids = idsParam
+    ? idsParam
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean)
+    : undefined;
 
   if (createMissing) {
     const missingIds = await db.business.findMany({
-      where: { campaignInvite: { is: null } },
+      where: {
+        campaignInvite: { is: null },
+        ...(ids?.length ? { id: { in: ids } } : {}),
+      },
       select: { id: true },
     });
 
@@ -52,6 +64,9 @@ export async function GET(request: NextRequest) {
   }
 
   const where: Prisma.BusinessWhereInput = {};
+  if (ids?.length) {
+    where.id = { in: ids };
+  }
   if (onlyEmailable) {
     where.editableData = {
       is: {
@@ -61,6 +76,23 @@ export async function GET(request: NextRequest) {
         ],
       },
     };
+  }
+
+  if (searchTerm) {
+    where.OR = [
+      { businessName: { contains: searchTerm, mode: 'insensitive' } },
+      { googleAddress: { contains: searchTerm, mode: 'insensitive' } },
+      {
+        editableData: {
+          is: {
+            OR: [
+              { contactPerson: { contains: searchTerm, mode: 'insensitive' } },
+              { tags: { has: searchTerm } },
+            ],
+          },
+        },
+      },
+    ];
   }
 
   const businesses = await db.business.findMany({
@@ -94,6 +126,9 @@ export async function GET(request: NextRequest) {
           lastVisitedAt: true,
           rsvpsCount: true,
           lastRsvpAt: true,
+          lastEmailMeta: true,
+          lastVisitMeta: true,
+          lastRsvpMeta: true,
         },
       },
     },
@@ -128,6 +163,9 @@ export async function GET(request: NextRequest) {
           lastVisitedAt: biz.campaignInvite.lastVisitedAt,
           rsvpsCount: biz.campaignInvite.rsvpsCount,
           lastRsvpAt: biz.campaignInvite.lastRsvpAt,
+          lastEmailMeta: biz.campaignInvite.lastEmailMeta,
+          lastVisitMeta: biz.campaignInvite.lastVisitMeta,
+          lastRsvpMeta: biz.campaignInvite.lastRsvpMeta,
         }
       : null,
   }));
