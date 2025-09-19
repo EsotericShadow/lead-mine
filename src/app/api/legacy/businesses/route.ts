@@ -124,6 +124,89 @@ function inferCategory(b: BusinessWithRelations): string {
   return inferCategoryFromText(text) || '';
 }
 
+function extractServicesFromText(text: string): string[] {
+  if (!text) return [];
+  const hay = text.toLowerCase();
+  const terms: Array<{ label: string; patterns: RegExp[] }> = [
+    { label: 'Repair', patterns: [/\brepair(s|ing)?\b/] },
+    { label: 'Installation', patterns: [/\binstall(ation|ing|s)?\b/] },
+    { label: 'Maintenance', patterns: [/\bmainten(ance|ance\s*plans|ing)\b/] },
+    { label: 'Emergency Service', patterns: [/\bemergency\b/, /24\/?7/] },
+    { label: 'Free Estimate', patterns: [/\bfree\s+estimate(s)?\b/, /\bestimate(s)?\b/] },
+    { label: 'Consultation', patterns: [/\bconsult(ation|ing|s)?\b/] },
+    { label: 'Cleaning', patterns: [/\bclean(ing|up|s)?\b/, /\bjanitorial\b/] },
+    { label: 'Pressure Washing', patterns: [/\bpressure\s*w(ash(ing)?|ash)\b/] },
+    { label: 'Roof Replacement', patterns: [/\broof(\s|-)replacement\b/] },
+    { label: 'Leak Repair', patterns: [/\bleak\b/] },
+    { label: 'Drain Cleaning', patterns: [/\bdrain\b/] },
+    { label: 'Septic', patterns: [/\bseptic\b/] },
+    { label: 'Electrical', patterns: [/\belectrical?\b/, /\bwiring\b/, /\bpanel\s*upgrade\b/] },
+    { label: 'Solar Installation', patterns: [/\bsolar\b/] },
+    { label: 'HVAC', patterns: [/\bhvac\b/, /\bheating\b/, /\bcooling\b/, /\bfurnace\b/, /\bair\s*conditioning\b/] },
+    { label: 'Duct Cleaning', patterns: [/\bduct\s*clean(ing)?\b/] },
+    { label: 'Insulation', patterns: [/\binsulation\b/] },
+    { label: 'Landscaping', patterns: [/\blandscap(ing|er|e)?\b/, /\blawn\b/] },
+    { label: 'Snow Removal', patterns: [/\bsnow\s*removal\b/] },
+    { label: 'Tree Service', patterns: [/\btree\b/] },
+    { label: 'Pest Control', patterns: [/\bpest\s*control\b/, /\bexterminat(e|or|ion)\b/] },
+    { label: 'Web Design', patterns: [/\bweb\s*design\b/] },
+    { label: 'SEO', patterns: [/\bseo\b/, /search\s*engine\s*optimization/] },
+    { label: 'Marketing', patterns: [/\bmarketing\b/, /\badvertis(ing|e|ements?)\b/] },
+    { label: 'Social Media', patterns: [/\bsocial\s*media\b/] },
+    { label: 'Branding', patterns: [/\bbrand(ing)?\b/] },
+    { label: 'Photography', patterns: [/\bphotograph(y|er|ic)\b/] },
+    { label: 'Catering', patterns: [/\bcater(ing|s)?\b/] },
+    { label: 'Delivery', patterns: [/\bdelivery\b/] },
+    { label: 'Takeout', patterns: [/\btake\s*out\b/, /\btakeaway\b/] },
+    { label: 'Dine-in', patterns: [/\bdine\s*in\b/] },
+    { label: 'Reservations', patterns: [/\breservation(s)?\b/, /\bbook\b/] },
+    { label: 'Event Hosting', patterns: [/\bevent(s)?\b/, /\bparty\b/, /\bvenue\b/] },
+    { label: 'Wedding', patterns: [/\bwedding(s)?\b/] },
+    { label: 'Private Dining', patterns: [/\bprivate\s*dining\b/] },
+    { label: 'Gluten-Free', patterns: [/\bgluten[-\s]?free\b/] },
+    { label: 'Vegan Options', patterns: [/\bvegan\b/] },
+    { label: 'Wheelchair Accessible', patterns: [/\bwheelchair\s*access(ible|ibility)\b/] },
+    { label: 'Parking', patterns: [/\bparking\b/] },
+    { label: 'Wi‑Fi', patterns: [/\bw[\- ]?fi\b/] },
+    { label: 'Memberships', patterns: [/\bmembership(s)?\b/] },
+    { label: 'Personal Training', patterns: [/\bpersonal\s*train(ing|er)\b/] },
+    { label: 'Classes', patterns: [/\bclass(es)?\b/, /\bcourse(s)?\b/] },
+    { label: 'Yoga', patterns: [/\byoga\b/] },
+    { label: 'Pilates', patterns: [/\bpilates\b/] },
+    { label: 'Massage', patterns: [/\bmassage\b/] },
+    { label: 'Facials', patterns: [/\bfacial(s)?\b/] },
+    { label: 'Manicure', patterns: [/\bmanicure(s)?\b/] },
+    { label: 'Pedicure', patterns: [/\bpedicure(s)?\b/] },
+    { label: 'Haircut', patterns: [/\bhair\s*cut(s)?\b/, /\bbarber\b/, /\bhair\s*color(ing)?\b/] },
+    { label: 'Towing', patterns: [/\btow(ing|s)?\b/] },
+    { label: 'Inspection', patterns: [/\binspection(s)?\b/] },
+    { label: 'Oil Change', patterns: [/\boil\s*change\b/] },
+    { label: 'Tire Service', patterns: [/\btire(s)?\b/] },
+    { label: 'Detailing', patterns: [/\bdetail(ing|er|s)?\b/] },
+    { label: 'Real Estate', patterns: [/\breal\s*estate\b/, /\brealt(or|y)\b/] },
+    { label: 'Property Management', patterns: [/\bproperty\s*management\b/] },
+    { label: 'Legal Services', patterns: [/\blegal\b/, /\blattorney\b/, /\blawyer\b/] },
+    { label: 'Tax Preparation', patterns: [/\btax\b/] },
+    { label: 'Bookkeeping', patterns: [/\bbookkeep(ing|er)?\b/] },
+    { label: 'Accounting', patterns: [/\baccount(ing|ant)?\b/] },
+    { label: 'Teeth Cleaning', patterns: [/\bteeth\s*clean(ing)?\b/] },
+    { label: 'Braces', patterns: [/\bbrace(s)?\b/, /\borthodont(ic|ist)\b/] },
+    { label: 'Implants', patterns: [/\bimplant(s)?\b/] },
+    { label: 'Emergency Dental', patterns: [/\bemergency\s*dent(al|ist)\b/] },
+    { label: 'Vaccinations', patterns: [/\bvaccin(e|ation|ations)\b/] },
+    { label: 'Grooming', patterns: [/\bgroom(ing|er)?\b/] },
+    { label: 'Boarding', patterns: [/\bboard(ing)?\b/] },
+    { label: 'Curbside Pickup', patterns: [/\bcurbside\s*pickup\b/] },
+  ];
+  const set = new Set<string>();
+  for (const t of terms) {
+    for (const re of t.patterns) {
+      if (re.test(hay)) { set.add(t.label); break; }
+    }
+  }
+  return Array.from(set);
+}
+
 function toViewerBusinessBase(b: BusinessWithRelations) {
   // Raw phones
   const rawPhones: { number: string; confidence?: number | null; type?: string | null; location?: string | null }[] = [];
@@ -168,6 +251,10 @@ function toViewerBusinessBase(b: BusinessWithRelations) {
   const notes = b.editableData?.notes ?? '';
   const primaryEmail = b.editableData?.primaryEmail ?? '';
 
+  // services tags from description/about copy
+  const servicesText = (b.websiteAboutCopy || b.description || '').toString();
+  const services_tags = extractServicesFromText(servicesText);
+
   // derive outreach/stage from leadInfo.status
   const status: string | undefined = b.leadInfo?.status;
   const outreachMap: Record<string, string> = {
@@ -199,6 +286,7 @@ function toViewerBusinessBase(b: BusinessWithRelations) {
     social_media: social_dedup,
     websites: websites_dedup,
     services: b.websiteAboutCopy || b.description || '',
+    services_tags,
     total_reviews: Number(b.googleReviewsCount || 0),
     average_rating: Number(b.googleRating || 0),
     scraped_at: b.scrapedAt || null,
