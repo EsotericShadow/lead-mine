@@ -10,7 +10,8 @@
     "lint": "eslint",
     "type-check": "tsc --noEmit",
     "import:csv": "tsx scripts/run-import.ts",
-    "backfill": "tsx scripts/backfill.ts"
+    "backfill": "tsx scripts/backfill.ts",
+    "sync:registry-emails": "tsx scripts/sync-registry-emails.ts"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

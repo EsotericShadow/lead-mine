@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { NoteType } from '@prisma/client';
+import { NoteType, Prisma } from '@prisma/client';
 
 import { db } from '@/lib/db';
 import { requireIntegrationKey } from '@/lib/integrationAuth';
@@ -51,6 +51,10 @@ export async function POST(request: NextRequest) {
   }
 
   const { token, type, businessId } = validation;
+  const metaJson = body.meta ? (body.meta as Prisma.InputJsonValue) : undefined;
+  const metaRecord = (body.meta && typeof body.meta === 'object' && !Array.isArray(body.meta))
+    ? (body.meta as Record<string, unknown>)
+    : {};
 
   const invite = token
     ? await db.campaignInvite.findUnique({
@@ -71,11 +75,11 @@ export async function POST(request: NextRequest) {
   if (type === 'email_sent') {
     await db.campaignInvite.update({
       where: { token: invite.token },
-      data: {
-        emailsSent: { increment: 1 },
-        lastEmailSent: now,
-        lastEmailMeta: body.meta ?? undefined,
-      },
+        data: {
+          emailsSent: { increment: 1 },
+          lastEmailSent: now,
+          lastEmailMeta: metaJson,
+        },
     });
 
     return NextResponse.json({ ok: true });
@@ -84,11 +88,11 @@ export async function POST(request: NextRequest) {
   if (type === 'visit') {
     await db.campaignInvite.update({
       where: { token: invite.token },
-      data: {
-        visitsCount: { increment: 1 },
-        lastVisitedAt: now,
-        lastVisitMeta: body.meta ?? undefined,
-      },
+        data: {
+          visitsCount: { increment: 1 },
+          lastVisitedAt: now,
+          lastVisitMeta: metaJson,
+        },
     });
 
     return NextResponse.json({ ok: true });
@@ -101,12 +105,12 @@ export async function POST(request: NextRequest) {
         data: {
           rsvpsCount: { increment: 1 },
           lastRsvpAt: now,
-          lastRsvpMeta: body.meta ?? undefined,
+          lastRsvpMeta: metaJson,
         },
       });
 
-      const explicitNote = (body.meta?.note as string | undefined)?.trim();
-      const rsvpId = body.meta?.rsvpId as string | undefined;
+      const explicitNote = typeof metaRecord.note === 'string' ? metaRecord.note.trim() : undefined;
+      const rsvpId = typeof metaRecord.rsvpId === 'string' ? metaRecord.rsvpId : undefined;
       const noteContent = explicitNote || `RSVP recorded via integration${rsvpId ? ` (rsvp: ${rsvpId})` : ''}`;
       if (noteContent) {
         await tx.note.create({
